@@ -1,0 +1,1 @@
+helm install --namespace minio-operator --create-namespace minio-operator ./operator

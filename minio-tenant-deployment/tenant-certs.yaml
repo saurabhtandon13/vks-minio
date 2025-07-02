@@ -1,0 +1,58 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: minio-console-selfsigned-issuer
+  namespace: minio-tenant
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-console-selfsigned-cert
+  namespace: minio-tenant
+spec:
+  isCA: true
+  commonName: minio-console.corp.internal
+  secretName: minio-console-cert-tls
+  dnsNames:
+    - minio-console.corp.internal
+  duration: 8760h
+  renewBefore: 240h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: minio-console-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: minio-api-selfsigned-issuer
+  namespace: minio-tenant
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-api-selfsigned-cert
+  namespace: minio-tenant
+spec:
+  isCA: true
+  commonName: minio-api.corp.internal
+  secretName: minio-api-cert-tls
+  dnsNames:
+    - minio-api.corp.internal
+  duration: 8760h
+  renewBefore: 240h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: minio-api-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+

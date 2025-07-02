@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: minio-operator
+commonAnnotations:
+  operator.min.io/authors: MinIO, Inc.
+  operator.min.io/license: AGPLv3
+  operator.min.io/support: https://subnet.min.io
+
+resources:
+  - resources/base/namespace.yaml
+  - resources/base/service-account.yaml
+  - resources/base/cluster-role.yaml
+  - resources/base/cluster-role-binding.yaml
+  - resources/base/crds/
+  - resources/base/service.yaml
+  - resources/base/deployment.yaml
+  - resources/base/certificate-operator.yaml
+
+patches:
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: minio-operator
+      namespace: minio-operator
+    spec:
+      template:
+        spec:
+          containers:
+            - name: minio-operator
+              env:
+                - name: OPERATOR_STS_AUTO_TLS_ENABLED
+                  value: "off"
+                - name: OPERATOR_STS_ENABLED
+                  value: "on"

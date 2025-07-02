@@ -1,0 +1,21 @@
+wget https://github.com/vmware-tanzu/tanzu-cli/releases/download/v1.5.3/tanzu-cli-linux-amd64.tar.gz
+
+tanzu plugin group search -n vmware-vsphere/default --show-details
+
+tanzu plugin install --group vmware-vsphere/default
+
+tanzu package repository add standard-repo --url projects.packages.broadcom.com/vsphere/supervisor/packages/2025.5.19/vks-standard-packages:v2025.5.19 -n tkg-system 
+
+tanzu package available list -n tkg-system 
+
+tanzu package available get cert-manager.tanzu.vmware.com -n tkg-system
+
+kubectl create ns package-installed
+
+tanzu package install cert-manager -p cert-manager.tanzu.vmware.com --namespace package-installed --version 1.16.1+vmware.1-tkg.1
+
+tanzu package installed list -n package-installed
+
+tanzu package install contour -p contour.tanzu.vmware.com -v 1.30.2+vmware.1-tkg.1 --values-file contour-data-values.yaml -n contour
+
+

@@ -1,0 +1,11 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: minio-operator-issuer-tls
+  namespace: minio-tenant
+  labels:
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
+spec:
+  ca:
+    secretName: minio-operator-ss-cert-xz5rj

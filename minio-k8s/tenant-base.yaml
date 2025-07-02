@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio-tenant
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: storage-configuration
+  namespace: minio-tenant
+stringData:
+  config.env: |-
+    export MINIO_ROOT_USER="minio"
+    export MINIO_ROOT_PASSWORD="minio123"
+    export MINIO_STORAGE_CLASS_STANDARD="EC:0"
+    export MINIO_BROWSER="on"
+type: Opaque
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-operator-ss-cert
+  namespace: minio-tenant
+  labels:
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
+spec:
+  isCA: true
+  commonName: minio-operator.corp.internal
+  secretName: minio-operator-cert-tls
+  dnsNames:
+    - minio-operator.corp.internal
+  duration: 8760h
+  renewBefore: 240h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: minio-ss-issuer
+    kind: ClusterIssuer 
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: minio-ss-issuer
+  namespace: minio-tenant
+  labels:
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
+spec:
+  ca:
+    secretName: minio-operator-cert-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-operator-certmanager-cert
+  namespace: minio-tenant
+  labels:
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
+spec:
+  dnsNames:
+    - "minio.minio-tenant"
+    - "minio.minio-tenant.svc"
+    - 'minio.minio-tenant.svc.cluster.local'
+    - '*.minio.minio-tenant.svc.cluster.local'
+    - '*.myminio-hl.minio-tenant.svc.cluster.local'
+    - '*.myminio.minio.minio-tenant.svc.cluster.local'
+  secretName: minio-operator-tls
+  issuerRef:
+    name: minio-ss-issuer
+---
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  annotations:
+    prometheus.io/path: /minio/v2/metrics/cluster
+    prometheus.io/port: "9000"
+    prometheus.io/scrape: "true"
+  labels:
+    app: minio
+  name: myminio
+  namespace: minio-tenant
+spec:
+  certConfig: {}
+  configuration:
+    name: storage-configuration
+  env: []
+  externalCaCertSecret: []
+  externalCertSecret:
+    - name: minio-ss-issuer
+      type: cert-manager.io/v1
+  externalClientCertSecrets: []
+  features:
+    bucketDNS: false
+    domains: {}
+  image: quay.io/minio/minio:RELEASE.2025-04-08T15-41-24Z
+  imagePullSecret: {}
+  mountPath: /export
+  podManagementPolicy: Parallel
+  pools:
+  - affinity:
+      nodeAffinity: {}
+      podAffinity: {}
+      podAntiAffinity: {}
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+      seccompProfile:
+        type: RuntimeDefault
+    name: pool-0
+    nodeSelector: {}
+    resources: {}
+    securityContext:
+      fsGroup: 1000
+      fsGroupChangePolicy: OnRootMismatch
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    servers: 1
+    tolerations: []
+    topologySpreadConstraints: []
+    volumeClaimTemplate:
+      apiVersion: v1
+      kind: persistentvolumeclaims
+      metadata: {}
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
+        storageClassName: vks-storage-policy
+      status: {}
+    volumesPerServer: 1
+  priorityClassName: ""
+  requestAutoCert: false
+  serviceAccountName: ""
+  serviceMetadata:
+    consoleServiceAnnotations: {}
+    consoleServiceLabels: {}
+    minioServiceAnnotations: {}
+    minioServiceLabels: {}
+  subPath: ""
+  users:
+  - name: storage-user
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-operator-ingress
+  namespace: minio-tenant
+  annotations:
+    ingress.kubernetes.io/backend-protocol: "HTTPS"
+  labels:
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
+spec:
+  ingressClassName: contour
+  tls:
+  - hosts:
+      - minio-operator.corp.internal
+    secretName: minio-operator-cert-tls
+  rules:
+    - host: minio-operator.corp.internal
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: myminio-console
+              port:
+                number: 9443

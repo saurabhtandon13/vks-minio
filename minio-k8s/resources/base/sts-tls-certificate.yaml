@@ -1,0 +1,18 @@
+# sts-tls-certificate.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sts-certmanager-cert
+  namespace: minio-operator
+  labels:
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
+spec:
+  dnsNames:
+    - sts
+    - sts.minio-operator.svc
+    - sts.minio-operator.svc.cluster.local # Replace cluster.local with the value for your domain.
+    - sts.minio-operator.corp.internal
+  secretName: sts-tls
+  issuerRef:
+    name: minio-operator-ca-issuer
