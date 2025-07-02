@@ -41,9 +41,9 @@ helm repo update
 The MinIO Operator is responsible for managing MinIO tenants. Install it using the provided Helm chart:
 
 ```bash
-helm install \\
-  --namespace minio-operator \\
-  --create-namespace \\
+helm install \
+  --namespace minio-operator \
+  --create-namespace \
   minio-operator minio/operator
 ```
 
@@ -54,7 +54,7 @@ You can find the chart and its default values in the `minio-operator-deployment/
 Once the operator is running, you can deploy a MinIO Tenant. A tenant represents your MinIO object storage cluster.
 
 ```bash
-helm install --namespace tenant-ns \\
+helm install --namespace tenant-ns \
   --create-namespace tenant minio/tenant
 ```
 
